@@ -1,97 +1,102 @@
-import { createContext, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import { products } from "../assets/assets";
 import { useNavigate } from "react-router-dom";
-// import { toast } from "react-toastify";
+import { toast } from "react-toastify";
 
 export const ShopContext = createContext();
 
-const ShopContextProvider = ({ children }) => {
-  const delivery_fee = 10;
-  const navigate = useNavigate();
+const ShopContextProvider = (props) => {
 
-  const [search, setSearch] = useState('');
-  const [showSearch, setShowSearch] = useState(false);
-  const [cartItems, setCartItems] = useState({});
+    const currency = '₹';
+    const delivery_fee = 10;
+    const navigate = useNavigate();
+    const [search, setSearch] = useState('');
+    const [showSearch, setShowSearch] = useState(false);
+    const [cartItems, setCartItems] = useState({});
 
-  // Format number as Indian Rupee currency
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
+    const addToCart = async (itemId, size) => {
 
-  // Add item to cart with size check
-  const addToCart = (itemId, size) => {
-    if (!size) {
-      // toast.error('Select product size');
-      return;
+        if (!size) {
+            toast.error('Select product size');
+            return;
+        }
+
+        let cartData = structuredClone(cartItems);
+
+        if (cartData[itemId]) {
+            if (cartData[itemId][size]) {
+                cartData[itemId][size] += 1;
+            }
+            else {
+                cartData[itemId][size] = 1;
+            }
+        }
+        else {
+            cartData[itemId] = {};
+            cartData[itemId][size] = 1
+        }
+        setCartItems(cartData)
+
     }
 
-    const cartData = structuredClone(cartItems);
+    const updateQuantity = async (itemId, size, quantity) => {
 
-    if (cartData[itemId]) {
-      cartData[itemId][size] = (cartData[itemId][size] || 0) + 1;
-    } else {
-      cartData[itemId] = { [size]: 1 };
+        let cartData = structuredClone(cartItems);
+        cartData[itemId][size] = quantity;
+        setCartItems(cartData);
+
     }
 
-    setCartItems(cartData);
-  };
+    const getCartCount = () => {
+        let totalCount = 0;
+        for (const items in cartItems) {
+            for (const item in cartItems[items]) {
+                try {
+                    if (cartItems[items][item] > 0) {
+                        totalCount += cartItems[items][item];
+                    }
+                } catch (error) {
+                }
+            }
+        }
+        return totalCount;
+    }
 
-  // Update quantity of specific item and size in cart
-  const updateQuantity = (itemId, size, quantity) => {
-    const cartData = structuredClone(cartItems);
-    cartData[itemId][size] = quantity;
-    setCartItems(cartData);
-  };
+    const getCartAmount = () => {
+        let totalAmount = 0;
+        for (const items in cartItems) {
+            let itemInfo = products.find((product) => product._id === items);
+            for (const item in cartItems[items]) {
+                try {
+                    if (cartItems[items][item] > 0) {
+                        totalAmount += itemInfo.price * cartItems[items][item];
+                    }
+                } catch (error) {
+                }
+            }
+        }
+        return totalAmount;
+    }
 
-  // Get total count of all items in cart
-  const getCartCount = () => {
-    return Object.values(cartItems).reduce(
-      (total, sizes) =>
-        total +
-        Object.values(sizes).reduce((sum, qty) => sum + (qty > 0 ? qty : 0), 0),
-      0
-    );
-  };
+    const value = {
+        currency, delivery_fee,
+        products,
+        navigate,
+        search, setSearch,
+        showSearch, setShowSearch,
+        addToCart, updateQuantity,
+        cartItems,
+        getCartCount, getCartAmount
 
-  // Get total amount (price) of all items in cart
-  const getCartAmount = () => {
-    return Object.entries(cartItems).reduce((total, [itemId, sizes]) => {
-      const product = products.find((p) => p._id === itemId);
-      if (!product) return total;
+    }
 
-      const itemTotal = Object.values(sizes).reduce(
-        (sum, qty) => sum + (qty > 0 ? qty * product.price : 0),
-        0
-      );
+    return (
+        <ShopContext.Provider value={value}>
+            {props.children}
+        </ShopContext.Provider>
+    )
 
-      return total + itemTotal;
-    }, 0);
-  };
 
-  // Provide all values and functions in context
-  const value = {
-    delivery_fee,
-    products,
-    navigate,
-    search,
-    setSearch,
-    showSearch,
-    setShowSearch,
-    addToCart,
-    updateQuantity,
-    cartItems,
-    getCartCount,
-    getCartAmount,
-    formatCurrency,
-  };
-
-  return (
-    <ShopContext.Provider value={value}>{children}</ShopContext.Provider>
-  );
-};
+}
 
 export default ShopContextProvider;

@@ -52,7 +52,7 @@ const Contact = () => {
               27/3 Hazratganj Road <br /> Gomti Nagar, Lucknow, UP - 226010, India
             </p>
             <p className="text-[#756f45] leading-relaxed mt-3">
-              Tel: +91 522 123 4567 <br /> Email: support@shortshopping.in
+              Tel: +91 522 123 4567 <br /> Email: support@medicare.in
             </p>
           </div>
 
